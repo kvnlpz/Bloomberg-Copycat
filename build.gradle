@@ -1,0 +1,38 @@
+plugins {
+    id 'java'
+    id 'org.openjfx.javafxplugin' version '0.0.7'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    // https://mvnrepository.com/artifact/javax.mail/mail
+    implementation group: 'javax.mail', name: 'mail', version: '1.4.1'
+    // jsoup HTML parser library @ https://jsoup.org/
+    implementation 'org.jsoup:jsoup:1.13.1'
+    // https://mvnrepository.com/artifact/net.sourceforge.jexcelapi/jxl
+    implementation group: 'net.sourceforge.jexcelapi', name: 'jxl', version: '2.6'
+    // https://mvnrepository.com/artifact/org.openjfx/javafx
+    implementation group: 'org.openjfx', name: 'javafx', version: '11', ext: 'pom'
+    // https://mvnrepository.com/artifact/org.openjfx/javafx-web
+    implementation group: 'org.openjfx', name: 'javafx-web', version: '17-ea+11'
+
+    implementation group: 'com.yahoofinance-api', name: 'YahooFinanceAPI', version: '3.15.0'
+
+}
+
+javafx {
+    modules = ['javafx.controls', 'javafx.web', 'javafx.swing', 'javafx.fxml']
+    version = '11.0.2'
+}
+
+test {
+    useJUnitPlatform()
+}
