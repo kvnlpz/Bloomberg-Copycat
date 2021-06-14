@@ -25,7 +25,6 @@ public class SymbolManager {
 
     public SymbolManager() throws IOException, WriteException {
         rowNumber = 0;
-//        StringSimilarity stringSimilarity = new StringSimilarity();
         workbook = Workbook.createWorkbook(new File("output.xls"));
         sheet = workbook.createSheet("Stock Sheet", 0);
         getSymbolList(nasdaqList);
@@ -60,7 +59,6 @@ public class SymbolManager {
         while((line = reader.readLine()) != null) {
             if(lineNumber > 1){
                 String[] symbolAndName = line.split("\\|", 2);
-//                System.out.println(Arrays.toString(symbolAndName));
                 String[] t = symbolAndName[1].split(",", 2);
                 if(t[0].contains("-")){
                     t[0] = t[0].split("-",2)[0];

@@ -6,60 +6,72 @@ import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 import java.awt.*;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.sun.javafx.scene.control.skin.Utils.getResource;
 
 public class GUI implements MouseListener {
 
-
-    static JLabel field1;
-    static JLabel field2;
-    static JLabel field3;
-    static JLabel field4;
-    private static String value = "";
-    final int maxGap = 20;
-    JLabel[] jLabels = new JLabel[4];
-    String[] test = new String[4];
     JFrame frame;
     DefaultListModel model;
     private JList list;
     JTabbedPane tabbedPane;
-    JComponent panel1;
+    JComponent chartTab;
+    JComponent filingInfoTab;
     int width = 800;
     int height = 600;
     static JPanel leftSideBar;
-    public GUI() throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-//        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    RSSManager rssManager;
+    Border borderRed;
+    Border borderBlue;
+    Border borderYellow;
+    Border borderGreen;
+    Border borderPurple;
+    Border borderPink;
 
+    public GUI(RSSManager rssManager) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        this.rssManager = rssManager;
         frame = new JFrame("Bloomberg Copycat");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(width, height);
+        frame.setResizable(false);
 
 
         GridLayout gridLayout = new GridLayout(2, 1);
         gridLayout.setHgap(10);
         gridLayout.setVgap(10);
         frame.setLayout(new BorderLayout());
-//        frame.setBackground(Color.black);
-
-
-
-        ImageIcon icon = createImageIcon("resources/icon.jpg");
+        frame.getContentPane().setBackground(new Color(107, 97, 97));
+        ImageIcon icon = createImageIcon("icon.png");
         tabbedPane = new JTabbedPane();
-        tabbedPane.setBackground(Color.black);
-        JTabbedPane tabbedPane2 = new JTabbedPane();
+        tabbedPane.setBorder(borderPink);
+        borderGreen = new LineBorder(Color.GREEN, 4, true);
+        borderPink = new LineBorder(Color.pink, 4, true);
+        borderPurple = new LineBorder(Color.MAGENTA, 4, true);
+        borderBlue = new LineBorder(Color.BLUE, 4, true);
+        borderRed = new LineBorder(Color.RED, 4, true);
+        borderYellow = new LineBorder(Color.yellow, 4, true);
+        tabbedPane.setBackground(new Color(107, 97, 97));
+        tabbedPane.setPreferredSize(new Dimension(width * 2 / 3, height / 2));
         JTabbedPane tabbedPane3 = new JTabbedPane();
-        panel1 = new JPanel();
-        tabbedPane.addTab("Tab 1", icon, panel1, "Does nothing");
+        chartTab = new JPanel();
+        chartTab.setBorder(borderYellow);
+        chartTab.setBackground(new Color(107, 97, 97));
+        filingInfoTab = new JPanel();
+        tabbedPane.addTab("Chart", icon, chartTab, "Chart");
+        filingInfoTab.setBorder(borderBlue);
+        tabbedPane.addTab("Filing Info", icon, filingInfoTab, "See Filing information");
         JComponent panel2 = new JPanel();
         panel2.setLayout(new BoxLayout(panel2, BoxLayout.Y_AXIS));
         Stock stock;
@@ -73,46 +85,35 @@ public class GUI implements MouseListener {
             e.printStackTrace();
         }
 
-//        panel2.add(new JLabel(stock.getName()));
-//        panel2.add(new JLabel(stock.getName()));
         tabbedPane.addTab("Stock Info", icon, panel2, "See Stock Info");
-        tabbedPane.setBackground(Color.black);
-        tabbedPane.setPreferredSize(new Dimension(width*2 / 3, height/2));
-        panel1.setBackground(Color.black);
-//        tabbedPane2.addTab("Tab 2", icon, panel2, "Does nothing");
+        tabbedPane.setBorder(borderPink);
         JComponent panel3 = makeTextPanel("Panel #1");
         tabbedPane3.addTab("Tab 3", icon, panel3, "Does nothing");
-
-        frame.getContentPane().setBackground(Color.black);
-        Button b1 = new Button("Test");
+        frame.getContentPane().setBackground(new Color(107, 97, 97));
         leftSideBar = new JPanel();
-        leftSideBar.setPreferredSize(new Dimension(width/10, height/2));
+        leftSideBar.setBorder(borderGreen);
+        leftSideBar.setOpaque(true);
+        leftSideBar.setBackground(new Color(107, 97, 97));
+        leftSideBar.setForeground(Color.white);
+        leftSideBar.setPreferredSize(new Dimension(width / 10, height / 2));
         JPanel rightSideBar = new JPanel();
-        rightSideBar.setPreferredSize(new Dimension(width/10, height/2));
-        for(int i = 0; i < 15; i++){
-//            JLabel j = new JLabel("filler text");
+        rightSideBar.setBorder(borderGreen);
+        rightSideBar.setBackground(new Color(107, 97, 97));
+        rightSideBar.setPreferredSize(new Dimension(width / 10, height / 2));
+
+        for (int i = 0; i < 15; i++) {
             JLabel b = new JLabel("filler text");
-//            j.setBackground(Color.black);
-            b.setBackground(Color.black);
-//            j.setForeground(Color.white);
-//            leftSideBar.add(j);
+            b.setForeground(Color.white);
             rightSideBar.add(b);
         }
-        Button b2 = new Button("Test");
-        Button b3 = new Button("Test");
-        b1.setBackground(new Color(209,196, 0));
-        b2.setBackground(new Color(209,196, 0));
-        b3.setBackground(new Color(209,196, 0));
-        frame.add(b1, BorderLayout.NORTH);
+
         frame.add(leftSideBar, BorderLayout.WEST);
+        populateLeftSidebar();
         frame.add(rightSideBar, BorderLayout.EAST);
         startTerminal();
         frame.add(tabbedPane, BorderLayout.CENTER);
-//        frame.add(new Button("East"), BorderLayout.EAST);
-//        frame.add(new Button("West"), BorderLayout.WEST);
         LoadWebPage();
         frame.setVisible(true);
-
 
 
     }
@@ -125,7 +126,10 @@ public class GUI implements MouseListener {
         panel.add(filler);
         return panel;
     }
-    /** Returns an ImageIcon, or null if the path was invalid. */
+
+    /**
+     * Returns an ImageIcon, or null if the path was invalid.
+     */
     protected static ImageIcon createImageIcon(String path) {
         java.net.URL imgURL = getResource(path);
         if (imgURL != null) {
@@ -139,56 +143,110 @@ public class GUI implements MouseListener {
     private void startTerminal() {
         model = new DefaultListModel();
         list = new JList(model);
+        list.setBorder(borderPurple);
         list.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         list.setLayoutOrientation(JList.HORIZONTAL_WRAP);
         list.setVisibleRowCount(-1);
-        list.setBackground(Color.BLACK);
-        list.setForeground(Color.yellow);
+        list.setBackground(new Color(107, 97, 97));
+        list.setForeground(Color.white);
         JScrollPane listScroller = new JScrollPane(list);
+        listScroller.getVerticalScrollBar().setBackground(new Color(107, 97, 97));
+
+        listScroller.getVerticalScrollBar().setUI(new BasicScrollBarUI() {
+            @Override
+            protected void configureScrollBarColors() {
+                this.thumbColor = new Color(66, 64, 64, 255);
+            }
+        });
         listScroller.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener() {
             public void adjustmentValueChanged(AdjustmentEvent e) {
                 e.getAdjustable().setValue(e.getAdjustable().getMaximum());
             }
         });
-        listScroller.setPreferredSize(new Dimension(width, height/2));
+        listScroller.setPreferredSize(new Dimension(width, height / 2));
         frame.add(listScroller, BorderLayout.SOUTH);
     }
 
-    public void LoadWebPage()
-    {
+    public void LoadWebPage() {
+        System.out.println("chart dimensions: " + chartTab.getSize().toString());
         JFXPanel jfxPanel = new JFXPanel();
-
-        jfxPanel.setBackground(Color.black);
-//        jfxPanel.setPreferredSize(new Dimension(tabbedPane.getWidth(), tabbedPane.getHeight()));
-        panel1.add(jfxPanel);
         Platform.runLater(() -> {
-            WebView webView = new WebView();
-            webView.setPrefSize(tabbedPane.getWidth(), tabbedPane.getHeight());
-            webView.resize(tabbedPane.getWidth(), tabbedPane.getHeight());
 
+            jfxPanel.setBackground(Color.black);
+            jfxPanel.setBorder(borderRed);
+            System.out.println("jfxpanel dimensions: " + jfxPanel.getPreferredSize().toString());
+            jfxPanel.setPreferredSize(new Dimension(chartTab.getWidth() - 10, chartTab.getHeight() - 10));
+            WebView webView = new WebView();
+            System.out.println("chart dimensions: " + chartTab.getSize().toString());
+            System.out.println("Webview dimensions: " + webView.getPrefWidth() + " x " + webView.getPrefHeight());
+            webView.setContextMenuEnabled(false);
             jfxPanel.setScene(new Scene(webView));
-            Dimension d = tabbedPane.getPreferredSize();
-            webView.getEngine().load("https://charting-library.tradingview.com/");
+            jfxPanel.setBackground(new Color(107, 97, 97));
+
+            webView.getEngine().setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.101 Safari/537.36");
+            webView.getEngine().load("https://kevn.wtf/Tradingview-embed/");
         });
+
+        jfxPanel.setAlignmentY(0);
+        jfxPanel.setAlignmentX(0);
+        chartTab.add(jfxPanel);
 
     }
 
     public void updateText(String textBefore) {
         model.addElement(textBefore);
+        try {
+            TimeUnit.SECONDS.sleep(2);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
-    void mouseClicked(){
+    public void populateLeftSidebar() {
+        List<JLabel> leftSideBarLabels = rssManager.getMatchingLinks();
+        for (JLabel j : leftSideBarLabels) {
+            j.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            j.setForeground(Color.white);
+            j.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    System.out.println("Yay you clicked me");
+                    String url = RSSManager.hyperlinks.get(j);
+                    JFXPanel jfxPanel = new JFXPanel();
+                    jfxPanel.setBackground(Color.black);
+                    jfxPanel.setPreferredSize(filingInfoTab.getSize());
+                    filingInfoTab.removeAll();
+                    filingInfoTab.add(jfxPanel);
 
+                    Platform.runLater(() -> {
+                        WebView webView = new WebView();
+                        webView.setMinSize(filingInfoTab.getWidth(), filingInfoTab.getHeight());
+                        webView.setPrefSize(filingInfoTab.getWidth(), filingInfoTab.getHeight());
+                        webView.resize(filingInfoTab.getWidth(), filingInfoTab.getHeight());
+                        jfxPanel.setScene(new Scene(webView));
+                        System.out.println("filing tab alignment: " + filingInfoTab.getAlignmentY());
+                        System.out.println("jfxpanel alignment: " + jfxPanel.getAlignmentY());
+                        jfxPanel.setAlignmentY(filingInfoTab.getAlignmentY());
+                        Dimension d = filingInfoTab.getPreferredSize();
+                        webView.getEngine().load(RSSManager.hyperlinks.get(j));
+                    });
+                    jfxPanel.revalidate();
+                    jfxPanel.setVisible(true);
+                    tabbedPane.setSelectedComponent(filingInfoTab);
+                }
+            });
+            leftSideBar.add(j);
+        }
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
         System.out.println("Mouse Clicked!!!!");
-        try{
+        try {
             String url = RSSManager.hyperlinks.get(e.getSource());
             Desktop.getDesktop().browse(new URI(url));
 
-        }catch (Exception exception){
+        } catch (Exception exception) {
             exception.printStackTrace();
         }
     }

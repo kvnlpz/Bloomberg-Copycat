@@ -2,26 +2,16 @@
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import javax.mail.search.FlagTerm;
-import javax.mail.search.FromTerm;
-import javax.mail.search.SearchTerm;
-import javax.mail.search.SubjectTerm;
-import java.awt.*;
+import javax.mail.search.*;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Properties;
 
-
 public class MailHandler {
-
 
     public MailHandler(String user, String pass) throws MessagingException, IOException {
         System.out.println("This is the mailhandler object");
@@ -44,14 +34,19 @@ public class MailHandler {
 
 
         // Fetch unseen messages from inbox folder
-        Message[] messages = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
+
+        FlagTerm unseenFlagTerm = new FlagTerm(new Flags(Flags.Flag.SEEN), false);
+        FromTerm fromTerm = new FromTerm(new InternetAddress("alerts@thinkorswim.com"));
+        SubjectTerm subjectTerm = new SubjectTerm("alert for all symbols");
+        SearchTerm searchTerm = new AndTerm(unseenFlagTerm, fromTerm);
+        SearchTerm searchTerm1 = new AndTerm(searchTerm, subjectTerm);
+
+        Message[] messages = inbox.search(searchTerm1);
+        System.out.println(messages.length);
 
 
-
-        System.out.println("Printing messages!");
+//        System.out.println("Printing messages!");
         for (Message message : messages) {
-//            String s = message.getSubject();
-            if(message.getSubject().contains("alert for all symbols")){
                 message.setFlag(Flags.Flag.SEEN,true);
                 String html = (String) message.getContent();
                 Document doc = Jsoup.parse(html);
@@ -59,14 +54,16 @@ public class MailHandler {
                 Elements select = doc.select("td > p");
                 //remove beginning part from string
                 String s = select.text().split("for all symbols",2)[1];
+                s = s.split(":", 2)[1];
+                System.out.println(s);
                 //remove the ending string
                 String alert = s.split("To view and manage your alerts:", 2)[0];
-//                System.out.println(alert);
+                System.out.println(alert);
                 terminalText += alert + "\n";
                 Main.gui.updateText(alert);
                 writer.write(alert + "\n");
 
-            }
+//            }
 
         }
         writer.close();
