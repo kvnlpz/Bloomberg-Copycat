@@ -7,14 +7,19 @@ import yahoofinance.YahooFinance;
 
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.plaf.basic.BasicScrollBarUI;
+import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -22,37 +27,73 @@ import static com.sun.javafx.scene.control.skin.Utils.getResource;
 
 public class GUI implements MouseListener {
 
+    static JPanel leftSideBar;
     JFrame frame;
     DefaultListModel model;
-    private JList list;
+    DefaultListModel redditModel;
+    DefaultListModel twitterModel;
+    DefaultListModel webullModel;
     JTabbedPane tabbedPane;
     JComponent chartTab;
     JComponent filingInfoTab;
     int width = 800;
     int height = 600;
-    static JPanel leftSideBar;
-    RSSManager rssManager;
+    //    RSSManager rssManager;
     Border borderRed;
     Border borderBlue;
     Border borderYellow;
     Border borderGreen;
     Border borderPurple;
     Border borderPink;
+    List<RSSManager> rssManagerList;
+    JPanel socialFeedPanel;
+    JPanel socialFeedReddit;
+    JPanel socialFeedTwitter;
+    JPanel socialFeedWebull;
+    JScrollPane socialFeedRedditScrollPane;
+    JScrollPane socialFeedTwitterScrollPane;
+    JScrollPane socialFeedWebullScrollPane;
+    //    JScrollPane socialFeedRedditScrollPane;
+    int internalWidth = 50;
+    private JList list;
+    private JList redditList;
+    private JList twitterList;
+    private JList webullList;
 
-    public GUI(RSSManager rssManager) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        this.rssManager = rssManager;
+    public GUI(RSSManager... rssManagers) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException, InterruptedException {
+        String lookAndFeel = UIManager.getSystemLookAndFeelClassName();
+
+//        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+//        UIManager.put("TabbedPane.background", Color.RED);
+        UIManager.getDefaults().put("TabbedPane.contentBorderInsets", new javax.swing.plaf.InsetsUIResource(0, 0, 0, 0));
+        UIManager.put("TabbedPane.selected", Color.red);
+        UIManager.put("TextField.highlight", Color.red);
+
+//        this.rssManager = rssManager;
+        rssManagerList = new ArrayList<>();
+        rssManagerList.addAll(Arrays.asList(rssManagers));
+
         frame = new JFrame("Bloomberg Copycat");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(width, height);
-        frame.setResizable(false);
+        frame.setResizable(true);
+
+        // redditModel = new DefaultListModel();
+        // redditList = new JList(redditModel);
+
+        //twitterModel = new DefaultListModel();
+        // twitterList = new JList(twitterModel);
+
+        //webullModel = new DefaultListModel();
+        // webullList = new JList(webullModel);
 
 
         GridLayout gridLayout = new GridLayout(2, 1);
         gridLayout.setHgap(10);
         gridLayout.setVgap(10);
         frame.setLayout(new BorderLayout());
-        frame.getContentPane().setBackground(new Color(107, 97, 97));
+//        frame.getContentPane().setBackground(new Color(107, 97, 97));
+        frame.getContentPane().setBackground(Color.black);
         ImageIcon icon = createImageIcon("icon.png");
         tabbedPane = new JTabbedPane();
         tabbedPane.setBorder(borderPink);
@@ -62,43 +103,141 @@ public class GUI implements MouseListener {
         borderBlue = new LineBorder(Color.BLUE, 4, true);
         borderRed = new LineBorder(Color.RED, 4, true);
         borderYellow = new LineBorder(Color.yellow, 4, true);
-        tabbedPane.setBackground(new Color(107, 97, 97));
+        tabbedPane.setBackground(Color.black);
         tabbedPane.setPreferredSize(new Dimension(width * 2 / 3, height / 2));
         JTabbedPane tabbedPane3 = new JTabbedPane();
+        JTabbedPane tabbedPane4 = new JTabbedPane();
         chartTab = new JPanel();
+        chartTab.setOpaque(true);
         chartTab.setBorder(borderYellow);
-        chartTab.setBackground(new Color(107, 97, 97));
+        chartTab.setBackground(Color.black);
         filingInfoTab = new JPanel();
+
+        tabbedPane.setUI(new BasicTabbedPaneUI() {
+            private final Insets borderInsets = new Insets(0, 0, 0, 0);
+
+            @Override
+            protected void paintContentBorder(Graphics g, int tabPlacement, int selectedIndex) {
+            }
+
+            @Override
+            protected Insets getContentBorderInsets(int tabPlacement) {
+                return borderInsets;
+            }
+        });
         tabbedPane.addTab("Chart", icon, chartTab, "Chart");
         filingInfoTab.setBorder(borderBlue);
+        filingInfoTab.setBackground(Color.black);
+        filingInfoTab.setOpaque(true);
         tabbedPane.addTab("Filing Info", icon, filingInfoTab, "See Filing information");
-        JComponent panel2 = new JPanel();
-        panel2.setLayout(new BoxLayout(panel2, BoxLayout.Y_AXIS));
+        JComponent stockInfoPanel = new JPanel();
+        stockInfoPanel.setOpaque(true);
+        stockInfoPanel.setBorder(borderYellow);
+        stockInfoPanel.setBackground(Color.black);
+        stockInfoPanel.setForeground(Color.white);
+        stockInfoPanel.setLayout(new BoxLayout(stockInfoPanel, BoxLayout.Y_AXIS));
         Stock stock;
         try {
             stock = YahooFinance.get("AAPL");
-            panel2.add(new JLabel(stock.getName()));
-            panel2.add(new JLabel(stock.getStockExchange()));
-            panel2.add(new JLabel(stock.getStats().toString()));
-            panel2.add(new JLabel(stock.getCurrency()));
+            JLabel name = new JLabel(stock.getName());
+            name.setForeground(Color.white);
+            JLabel exchange = new JLabel(stock.getStockExchange());
+            exchange.setForeground(Color.white);
+            JLabel stats = new JLabel(stock.getStats().toString());
+            stats.setForeground(Color.white);
+            JLabel currency = new JLabel(stock.getCurrency());
+            currency.setForeground(Color.white);
+            stockInfoPanel.add(name);
+            stockInfoPanel.add(exchange);
+            stockInfoPanel.add(stats);
+            stockInfoPanel.add(currency);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        tabbedPane.addTab("Stock Info", icon, panel2, "See Stock Info");
+        tabbedPane.addTab("Stock Info", icon, stockInfoPanel, "See Stock Info");
         tabbedPane.setBorder(borderPink);
-        JComponent panel3 = makeTextPanel("Panel #1");
-        tabbedPane3.addTab("Tab 3", icon, panel3, "Does nothing");
-        frame.getContentPane().setBackground(new Color(107, 97, 97));
+
+
+        socialFeedPanel = new JPanel();
+
+//        socialFeedReddit = new JPanel(new GridLayout(50, 1));
+//        socialFeedTwitter = new JPanel(new GridLayout(50, 1));
+//        socialFeedWebull = new JPanel(new GridLayout(50, 1));
+
+        socialFeedReddit = new JPanel();
+        socialFeedReddit.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+        socialFeedTwitter = new JPanel();
+        socialFeedTwitter.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+        socialFeedWebull = new JPanel();
+        socialFeedWebull.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+
+        socialFeedRedditScrollPane = new JScrollPane(socialFeedReddit);
+        socialFeedTwitterScrollPane = new JScrollPane(socialFeedTwitter);
+        socialFeedWebullScrollPane = new JScrollPane(socialFeedWebull);
+
+        socialFeedRedditScrollPane.setPreferredSize(new Dimension(width / 5, height / 10));
+        socialFeedTwitterScrollPane.setPreferredSize(new Dimension(width / 5, height / 10));
+        socialFeedWebullScrollPane.setPreferredSize(new Dimension(width / 5, height / 10));
+
+        socialFeedRedditScrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
+        socialFeedTwitterScrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
+        socialFeedWebullScrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
+
+
+        socialFeedReddit.setPreferredSize(new Dimension(width / 5, height / 2));
+        socialFeedTwitter.setPreferredSize(new Dimension(width / 5, height / 2));
+        socialFeedWebull.setPreferredSize(new Dimension(width / 5, height / 2));
+
+
+        socialFeedReddit.setBackground(Color.red);
+        socialFeedWebull.setBackground(Color.green);
+        socialFeedTwitter.setBackground(Color.pink);
+
+        socialFeedPanel.setLayout(new GridLayout());
+        socialFeedPanel.setOpaque(true);
+        socialFeedPanel.setPreferredSize(new Dimension(width/2, height / 2));
+        socialFeedPanel.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+
+//        socialFeedPanel.add(socialFeedReddit);
+//        socialFeedPanel.add(socialFeedWebull);
+//        socialFeedPanel.add(socialFeedTwitter);
+
+        socialFeedPanel.add(socialFeedRedditScrollPane);
+        socialFeedPanel.add(socialFeedTwitterScrollPane);
+        socialFeedPanel.add(socialFeedWebullScrollPane);
+
+
+        tabbedPane.addTab("Social Feed", icon, socialFeedPanel, "TWITTER/REDDIT/WEBULL");
+        tabbedPane.setOpaque(true);
+//        tabbedPane.setBackgroundAt(0, Color.yellow);
+//        tabbedPane.setBackgroundAt(1, Color.blue);
+//        tabbedPane.setBackgroundAt(2, Color.pink);
+//        tabbedPane.setBackgroundAt(3, Color.orange);
+        tabbedPane.setBackgroundAt(0, Color.black);
+        tabbedPane.setBackgroundAt(1, Color.black);
+        tabbedPane.setBackgroundAt(2, Color.black);
+        tabbedPane.setBackgroundAt(3, Color.black);
+
+        tabbedPane.setForegroundAt(0, Color.white);
+        tabbedPane.setForegroundAt(1, Color.white);
+        tabbedPane.setForegroundAt(2, Color.white);
+        tabbedPane.setForegroundAt(3, Color.white);
+
+
+        frame.getContentPane().setBackground(Color.black);
+
+
         leftSideBar = new JPanel();
         leftSideBar.setBorder(borderGreen);
         leftSideBar.setOpaque(true);
-        leftSideBar.setBackground(new Color(107, 97, 97));
+        leftSideBar.setBackground(Color.black);
         leftSideBar.setForeground(Color.white);
         leftSideBar.setPreferredSize(new Dimension(width / 10, height / 2));
+
         JPanel rightSideBar = new JPanel();
         rightSideBar.setBorder(borderGreen);
-        rightSideBar.setBackground(new Color(107, 97, 97));
+        rightSideBar.setBackground(Color.black);
         rightSideBar.setPreferredSize(new Dimension(width / 10, height / 2));
 
         for (int i = 0; i < 15; i++) {
@@ -107,24 +246,47 @@ public class GUI implements MouseListener {
             rightSideBar.add(b);
         }
 
+
+        TitledBorder socialFeedRedditBorderTitle = BorderFactory.createTitledBorder(borderGreen, "Reddit");
+        socialFeedRedditBorderTitle.setTitleColor(Color.white);
+        TitledBorder socialFeedTwitterBorderTitle = BorderFactory.createTitledBorder(borderPurple, "Twitter");
+        socialFeedTwitterBorderTitle.setTitleColor(Color.white);
+        TitledBorder socialFeedWebullBorderTitle = BorderFactory.createTitledBorder(borderRed, "Webull");
+        socialFeedWebullBorderTitle.setTitleColor(Color.white);
+        socialFeedRedditScrollPane.setBorder(socialFeedRedditBorderTitle);
+        socialFeedRedditScrollPane.setBackground(Color.black);
+        socialFeedTwitterScrollPane.setBackground(Color.black);
+        socialFeedWebullScrollPane.setBackground(Color.black);
+        socialFeedTwitterScrollPane.setBorder(socialFeedTwitterBorderTitle);
+        socialFeedWebullScrollPane.setBorder(socialFeedWebullBorderTitle);
+//        socialFeedReddit.setOpaque(true);
+        socialFeedReddit.setBackground(Color.black);
+        socialFeedReddit.setForeground(Color.white);
+        socialFeedReddit.setPreferredSize(new Dimension(width / 10, height / 2));
+
+
+//        socialFeedTwitter.setOpaque(true);
+        socialFeedTwitter.setBackground(Color.black);
+        socialFeedTwitter.setForeground(Color.white);
+        socialFeedTwitter.setPreferredSize(new Dimension(width / 10, height / 2));
+
+
+//        socialFeedWebull.setOpaque(true);
+        socialFeedWebull.setBackground(Color.black);
+        socialFeedWebull.setForeground(Color.white);
+        socialFeedWebull.setPreferredSize(new Dimension(width / 10, height / 2));
+
+
+        populateRSSFeeds();
         frame.add(leftSideBar, BorderLayout.WEST);
-        populateLeftSidebar();
+        //populateLeftSidebar();
         frame.add(rightSideBar, BorderLayout.EAST);
         startTerminal();
         frame.add(tabbedPane, BorderLayout.CENTER);
         LoadWebPage();
+//        frame.setBackground(Color.black);
         frame.setVisible(true);
 
-
-    }
-
-    protected JComponent makeTextPanel(String text) {
-        JPanel panel = new JPanel(false);
-        JLabel filler = new JLabel(text);
-        filler.setHorizontalAlignment(JLabel.CENTER);
-        panel.setLayout(new GridLayout(1, 1));
-        panel.add(filler);
-        return panel;
     }
 
     /**
@@ -140,6 +302,15 @@ public class GUI implements MouseListener {
         }
     }
 
+    protected JComponent makeTextPanel(String text) {
+        JPanel panel = new JPanel(false);
+        JLabel filler = new JLabel(text);
+        filler.setHorizontalAlignment(JLabel.CENTER);
+        panel.setLayout(new GridLayout(1, 1));
+        panel.add(filler);
+        return panel;
+    }
+
     private void startTerminal() {
         model = new DefaultListModel();
         list = new JList(model);
@@ -147,7 +318,7 @@ public class GUI implements MouseListener {
         list.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         list.setLayoutOrientation(JList.HORIZONTAL_WRAP);
         list.setVisibleRowCount(-1);
-        list.setBackground(new Color(107, 97, 97));
+        list.setBackground(Color.black);
         list.setForeground(Color.white);
         JScrollPane listScroller = new JScrollPane(list);
         listScroller.getVerticalScrollBar().setBackground(new Color(107, 97, 97));
@@ -202,41 +373,130 @@ public class GUI implements MouseListener {
         }
     }
 
-    public void populateLeftSidebar() {
-        List<JLabel> leftSideBarLabels = rssManager.getMatchingLinks();
-        for (JLabel j : leftSideBarLabels) {
-            j.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            j.setForeground(Color.white);
-            j.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    System.out.println("Yay you clicked me");
-                    String url = RSSManager.hyperlinks.get(j);
-                    JFXPanel jfxPanel = new JFXPanel();
-                    jfxPanel.setBackground(Color.black);
-                    jfxPanel.setPreferredSize(filingInfoTab.getSize());
-                    filingInfoTab.removeAll();
-                    filingInfoTab.add(jfxPanel);
+    //    public void populateLeftSidebar() {
+//        List<JLabel> leftSideBarLabels = rssManager.getMatchingLinks();
+//        for (JLabel j : leftSideBarLabels) {
+//            j.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+//            j.setForeground(Color.white);
+//            j.addMouseListener(new MouseAdapter() {
+//                @Override
+//                public void mouseClicked(MouseEvent e) {
+//                    System.out.println("Yay you clicked me");
+//                    String url = RSSManager.hyperlinks.get(j);
+//                    JFXPanel jfxPanel = new JFXPanel();
+//                    jfxPanel.setBackground(Color.black);
+//                    jfxPanel.setPreferredSize(filingInfoTab.getSize());
+//                    filingInfoTab.removeAll();
+//                    filingInfoTab.add(jfxPanel);
+//
+//                    Platform.runLater(() -> {
+//                        WebView webView = new WebView();
+//                        webView.setMinSize(filingInfoTab.getWidth(), filingInfoTab.getHeight());
+//                        webView.setPrefSize(filingInfoTab.getWidth(), filingInfoTab.getHeight());
+//                        webView.resize(filingInfoTab.getWidth(), filingInfoTab.getHeight());
+//                        jfxPanel.setScene(new Scene(webView));
+//                        System.out.println("filing tab alignment: " + filingInfoTab.getAlignmentY());
+//                        System.out.println("jfxpanel alignment: " + jfxPanel.getAlignmentY());
+//                        jfxPanel.setAlignmentY(filingInfoTab.getAlignmentY());
+//                        Dimension d = filingInfoTab.getPreferredSize();
+//                        webView.getEngine().load(RSSManager.hyperlinks.get(j));
+//                    });
+//                    jfxPanel.revalidate();
+//                    jfxPanel.setVisible(true);
+//                    tabbedPane.setSelectedComponent(filingInfoTab);
+//                }
+//            });
+//            leftSideBar.add(j);
+//        }
+//    }
+    public void updateFeeds() {
 
-                    Platform.runLater(() -> {
-                        WebView webView = new WebView();
-                        webView.setMinSize(filingInfoTab.getWidth(), filingInfoTab.getHeight());
-                        webView.setPrefSize(filingInfoTab.getWidth(), filingInfoTab.getHeight());
-                        webView.resize(filingInfoTab.getWidth(), filingInfoTab.getHeight());
-                        jfxPanel.setScene(new Scene(webView));
-                        System.out.println("filing tab alignment: " + filingInfoTab.getAlignmentY());
-                        System.out.println("jfxpanel alignment: " + jfxPanel.getAlignmentY());
-                        jfxPanel.setAlignmentY(filingInfoTab.getAlignmentY());
-                        Dimension d = filingInfoTab.getPreferredSize();
-                        webView.getEngine().load(RSSManager.hyperlinks.get(j));
-                    });
-                    jfxPanel.revalidate();
-                    jfxPanel.setVisible(true);
-                    tabbedPane.setSelectedComponent(filingInfoTab);
+    }
+
+    public void populateRSSFeeds() throws InterruptedException {
+        for (RSSManager r : rssManagerList) {
+            r.updateRSS();
+//            Thread.sleep(1000);
+            System.out.println("\n\n\n\n\n");
+//            r.printRSSList();
+            List<RSSItem> rssItems = r.getRssItems();
+            System.out.println(rssItems.toString());
+
+
+            if (r.getURL().contains("reddit")) {
+                System.out.println("REDDIT IS TRUE");
+                for (RSSItem rssItem : rssItems) {
+
+
+                    JTextArea textArea = new JTextArea(1, 1);
+                    textArea.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+                    textArea.setText(rssItem.title);
+                    textArea.getDocument().putProperty("filterNewlines", Boolean.TRUE);
+//                    textArea.setWrapStyleWord(true);
+//                    textArea.setLineWrap(true);
+                    textArea.setOpaque(false);
+                    textArea.setEditable(false);
+                    textArea.setFocusable(true);
+                    textArea.setForeground(Color.white);
+                    socialFeedReddit.add(textArea);
+                    System.out.println(rssItem.title);
+
+//                    JLabel b = new JLabel(rssItem.title);
+//                    b.setForeground(Color.white);
+//                    socialFeedReddit.add(b);
+
                 }
-            });
-            leftSideBar.add(j);
+            }
+            if (r.getURL().contains("https://kevn.wtf/RSSFeed/feed.twitter.xml")) {
+                System.out.println("TWITTER IS TRUE");
+                for (RSSItem rssItem : rssItems) {
+                    JTextArea textArea = new JTextArea(1, 1);
+                    textArea.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+
+                    textArea.setText(rssItem.title);
+                    textArea.getDocument().putProperty("filterNewlines", Boolean.TRUE);
+//                    textArea.setWrapStyleWord(true);
+//                    textArea.setLineWrap(true);
+                    textArea.setOpaque(false);
+                    textArea.setEditable(false);
+                    textArea.setFocusable(true);
+                    textArea.setForeground(Color.white);
+                    socialFeedTwitter.add(textArea);
+                    System.out.println(rssItem.title);
+//                    JLabel b = new JLabel(rssItem.title);
+//                    b.setForeground(Color.white);
+//                    socialFeedTwitter.add(b);
+//                    System.out.println(rssItem.title);
+                }
+            }
+            if (r.getURL().contains("https://kevn.wtf/RSSFeed/feed.webull.xml")) {
+                System.out.println("WEBULL IS TRUE");
+                for (RSSItem rssItem : rssItems) {
+
+                    String description = rssItem.description;
+                    JTextArea textArea = new JTextArea(1, 1);
+                    textArea.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+
+                    textArea.setText(description);
+                    textArea.getDocument().putProperty("filterNewlines", Boolean.TRUE);
+                    textArea.setToolTipText(description);
+//                    textArea.setWrapStyleWord(true);
+//                    textArea.setLineWrap(true);
+                    textArea.setOpaque(false);
+                    textArea.setEditable(false);
+                    textArea.setFocusable(true);
+                    textArea.setForeground(Color.white);
+                    socialFeedWebull.add(textArea);
+
+                    System.out.println(description);
+//                    JLabel b = new JLabel(rssItem.title);
+//                    b.setForeground(Color.white);
+//                    socialFeedWebull.add(b);
+//                    System.out.println(rssItem.title);
+                }
+            }
         }
+
     }
 
     @Override

@@ -1,7 +1,7 @@
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMultipart;
@@ -29,8 +29,8 @@ public class MailHandler {
         Store store = session.getStore("imaps");
         store.connect(host, username, password);
 
-        Folder inbox = store.getFolder( "INBOX" );
-        inbox.open( Folder.READ_WRITE );
+        Folder inbox = store.getFolder("INBOX");
+        inbox.open(Folder.READ_WRITE);
 
 
         // Fetch unseen messages from inbox folder
@@ -47,21 +47,21 @@ public class MailHandler {
 
 //        System.out.println("Printing messages!");
         for (Message message : messages) {
-                message.setFlag(Flags.Flag.SEEN,true);
-                String html = (String) message.getContent();
-                Document doc = Jsoup.parse(html);
-                //the information we actually want is always inside an element p that is inside an element td
-                Elements select = doc.select("td > p");
-                //remove beginning part from string
-                String s = select.text().split("for all symbols",2)[1];
-                s = s.split(":", 2)[1];
-                System.out.println(s);
-                //remove the ending string
-                String alert = s.split("To view and manage your alerts:", 2)[0];
-                System.out.println(alert);
-                terminalText += alert + "\n";
-                Main.gui.updateText(alert);
-                writer.write(alert + "\n");
+            message.setFlag(Flags.Flag.SEEN, true);
+            String html = (String) message.getContent();
+            Document doc = Jsoup.parse(html);
+            //the information we actually want is always inside an element p that is inside an element td
+            Elements select = doc.select("td > p");
+            //remove beginning part from string
+            String s = select.text().split("for all symbols", 2)[1];
+            s = s.split(":", 2)[1];
+//                System.out.println(s);
+            //remove the ending string
+            String alert = s.split("To view and manage your alerts:", 2)[0];
+//                System.out.println(alert);
+            terminalText += alert + "\n";
+            Main.gui.updateText(alert);
+            writer.write(alert + "\n");
 
 //            }
 
@@ -84,7 +84,7 @@ public class MailHandler {
     }
 
     private String getTextFromMimeMultipart(
-            MimeMultipart mimeMultipart)  throws MessagingException, IOException{
+            MimeMultipart mimeMultipart) throws MessagingException, IOException {
         String result = "";
         int count = mimeMultipart.getCount();
         for (int i = 0; i < count; i++) {
@@ -95,8 +95,8 @@ public class MailHandler {
             } else if (bodyPart.isMimeType("text/html")) {
                 String html = (String) bodyPart.getContent();
                 result = result + "\n" + Jsoup.parse(html).text();
-            } else if (bodyPart.getContent() instanceof MimeMultipart){
-                result = result + getTextFromMimeMultipart((MimeMultipart)bodyPart.getContent());
+            } else if (bodyPart.getContent() instanceof MimeMultipart) {
+                result = result + getTextFromMimeMultipart((MimeMultipart) bodyPart.getContent());
             }
         }
         return result;
