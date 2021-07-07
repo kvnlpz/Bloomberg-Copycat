@@ -10,21 +10,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RSSManager {
+public class RSSManager implements Runnable {
 
     String lastModified = "";
     String eTag = "";
     String URL = "";
     String xml;
     Boolean isFirstRequest = true;
-
+    List<RSSItem> rssItems;
     List<String> SECLinks = new ArrayList<>();
+
+
 
     public List<RSSItem> getRssItems() {
         return rssItems;
     }
-
-    List<RSSItem> rssItems;
     static Map<JLabel, String> hyperlinks = new HashMap<>();
 
     public String getURL() {
@@ -37,29 +37,31 @@ public class RSSManager {
 
     }
 
-    public List<JLabel> getMatchingLinks() {
-        int i = 1;
-        List<JLabel> jLabels = new ArrayList<>();
-        for (String link : SECLinks) {
-            try {
-                Document html = Jsoup.connect(link).get();
-                for (Element e : html.select("tr > td")) {
-                    if (e.text().contains("CURRENT REPORT")) {
-                        Element o = e.nextElementSibling().selectFirst("a");
-                        String url = "https://www.sec.gov" + o.attr("href");
-                        JLabel j = new JLabel();
-                        j.setText("Filing " + i++);
-
-                        jLabels.add(j);
-                        hyperlinks.put(j, url);
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return jLabels;
-    }
+//    public List<JLabel> getMatchingLinks() {
+//        int i = 1;
+//        System.out.println("inside getMacthingLinks");
+//        System.out.println(SECLinks.toString());
+//        List<JLabel> jLabels = new ArrayList<>();
+//        for (RSSItem rssItem : rssItems) {
+//            try {
+//                Document html = Jsoup.connect(link).get();
+//                for (Element e : html.select("tr > td")) {
+//                    if (e.text().contains("CURRENT REPORT")) {
+//                        Element o = e.nextElementSibling().selectFirst("a");
+//                        String url = "https://www.sec.gov" + o.attr("href");
+//
+//                        JLabel j = new JLabel();
+//                        j.setText("Filing " + i++);
+//                        jLabels.add(j);
+//                        hyperlinks.put(j, url);
+//                    }
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        return jLabels;
+//    }
 
     public void updateRSS() {
         //if it is not the first request and it is not
@@ -89,16 +91,19 @@ public class RSSManager {
         }
         Document doc = Jsoup.parse(xml, "", Parser.xmlParser());
 
-        System.out.println("last_modified: " + lastModified);
-        System.out.println(URL);
+//        System.out.println("last_modified: " + lastModified);
+//        System.out.println(URL);
         if (!lastModified.equals(doc.select("updated").first().text())) {
+            //System.out.println("it was modified so we are getting posts");
             if (URL.contains("sec")) {
+                //System.out.println("RSS MANAGER CONTAINED SEC");
                 for (Element e : doc.select("entry")) {
 //            if(e.attr("href").contains("https:")){
 //                SECLinks.add(e.attr("href").toString());
 //            }
                     String title = e.select("title").text();
                     String link = e.select("link").attr("href").toString();
+                    SECLinks.add(link);
                     RSSItem rssItem = new RSSItem(title, link);
                     rssItems.add(rssItem);
 //                System.out.println(rssItem.toString());
@@ -113,6 +118,8 @@ public class RSSManager {
                     String title = e.select("title").text();
                     String description = e.select("description").text();
                     description = Jsoup.parse(description).text();
+                    description = description.replaceAll("\\<.*?\\>", "");
+//                    System.out.println(description);
                     RSSItem rssItem = new RSSItem(title, "", description);
                     rssItems.add(rssItem);
 //                System.out.println(rssItem.toString());
@@ -145,7 +152,12 @@ public class RSSManager {
 
     public void printRSSList() {
         for (RSSItem rssItem : rssItems) {
-            System.out.println(rssItem);
+//            System.out.println(rssItem);
         }
+    }
+
+    @Override
+    public void run() {
+
     }
 }

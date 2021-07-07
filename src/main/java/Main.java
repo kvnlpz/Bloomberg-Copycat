@@ -12,7 +12,7 @@ public class Main {
         RSSManager redditManager = new RSSManager(url2);
         RSSManager twitterManager = new RSSManager(url3);
         RSSManager webullManager = new RSSManager(url4);
-        gui = new GUI(twitterManager, redditManager, webullManager);
+        gui = new GUI(rssManager, twitterManager, redditManager, webullManager);
         SymbolManager symbolManager = new SymbolManager();
         MailHandler mailHandler = new MailHandler(args[0], args[1]);
 //        symbolManager.similaritySearch("Benzinga: BZ: Sorrento Therapeutics Reports Receives Authorization From UK Regulatory Agency To Conduct Phase 2 Trial For COVI-DROPS In Outpatient Setting");
